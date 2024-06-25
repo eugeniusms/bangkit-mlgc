@@ -11,7 +11,7 @@ async function predictClassification(model, image) {
   const score = await prediction.data();
   const confidenceScore = Math.max(...score) * 100;
 
-  return { confidenceScore, label, explanation, suggestion };
+  return { confidenceScore, suggestion };
 }
 
 module.exports = predictClassification;
