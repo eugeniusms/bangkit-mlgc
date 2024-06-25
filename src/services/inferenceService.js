@@ -1,13 +1,15 @@
 const tf = require("@tensorflow/tfjs-node");
 const InputError = require("../exceptions/InputError");
 
-async function predictClassification(model, image) {
+async function predictClassification(model, imageBuffer) {
   try {
     const tensor = tf.node
-      .decodeJpeg(image)
+      .decodeImage(imageBuffer, 3)
       .resizeNearestNeighbor([224, 224])
       .expandDims()
-      .toFloat();
+      .toFloat()
+      .div(tf.scalar(127.5))
+      .sub(tf.scalar(1));
 
     const classes = [
       "Melanocytic nevus",

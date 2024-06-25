@@ -15,8 +15,13 @@ const InputError = require("../exceptions/InputError");
     },
   });
 
-  const model = await loadModel();
-  server.app.model = model;
+  try {
+    const model = await loadModel();
+    server.app.model = model;
+  } catch (error) {
+    console.error("Failed to load the model:", error);
+    process.exit(1);
+  }
 
   server.route(routes);
 
@@ -45,5 +50,5 @@ const InputError = require("../exceptions/InputError");
   });
 
   await server.start();
-  console.log(`Server start at: ${server.info.uri}`);
+  console.log(`Server started at: ${server.info.uri}`);
 })();
