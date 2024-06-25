@@ -1,47 +1,40 @@
-const predictClassification = require("../services/inferenceService");
 const crypto = require("crypto");
-const storeData = require("../services/storeData");
-const InputError = require("../exceptions/InputError");
+const loadModel = require("./loadModel");
+const predictClassification = require("./inferenceService");
+const storeData = require("./storeData");
 
-async function postPredictHandler(request, h) {
-  const { image } = request.payload;
-  if (!image) {
-    throw new InputError("Image is required.");
-  }
-
-  const { model } = request.server.app;
-
+async function predict(req, res) {
+  const imageFile = req.file;
+  const id = crypto.randomUUID();
+  const model = await loadModel();
   try {
-    const { confidenceScore, label, explanation, suggestion } =
-      await predictClassification(model, image._data);
-
-    const id = crypto.randomUUID();
-    const createdAt = new Date().toISOString();
-
-    const data = {
+    const { confidenceScore } = await predictClassification(model, imageFile);
+    const predictionResult = {
       id: id,
-      result: label,
-      explanation: explanation,
-      suggestion: suggestion,
-      confidenceScore: confidenceScore,
-      createdAt: createdAt,
+      result: confidenceScore > 0.5 ? "Cancer" : "Non-Cancer",
+      suggestion:
+        confidenceScore > 0.5
+          ? "Segera periksa ke dokter!"
+          : "Tidak kena kanker",
+      createdAt: new Date().toISOString(),
     };
 
-    await storeData(id, data);
+    await storeData(id, predictionResult);
 
-    const response = h.response({
+    res.status(200).json({
       status: "success",
-      message:
-        confidenceScore > 99
-          ? "Model is predicted successfully."
-          : "Model is predicted successfully but under threshold. Please use the correct picture",
-      data,
+      message: "Model is predicted successfully",
+      data: predictionResult,
     });
-    response.code(201);
-    return response;
   } catch (error) {
-    throw new InputError(`Inference failed: ${error.message}`);
+    res.status(400).json({
+      status: "fail",
+      message: "Terjadi kesalahan dalam melakukan prediksi",
+      data: predictionResult,
+    });
   }
 }
 
-module.exports = postPredictHandler;
+module.exports = {
+  predict,
+};

@@ -1,20 +1,10 @@
-const postPredictHandler = require("../server/handler");
+const multer = require("multer");
+const handler = require("./handler");
 
-const routes = [
-  {
-    path: "/predict",
-    method: "POST",
-    handler: postPredictHandler,
-    options: {
-      payload: {
-        maxBytes: 1048576, // 1 MB limit
-        output: "stream",
-        parse: true,
-        allow: "multipart/form-data",
-        multipart: true,
-      },
-    },
-  },
-];
+const upload = multer({
+  limits: { fileSize: 1000000 },
+});
 
-module.exports = routes;
+module.exports = function (app) {
+  app.post("/predict", upload.single("image"), handler.predict);
+};
