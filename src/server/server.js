@@ -1,16 +1,49 @@
-const express = require("express");
-const cors = require("cors");
-const routes = require("./routes");
+require("dotenv").config();
 
-const app = express();
-const port = 3000;
+const Hapi = require("@hapi/hapi");
+const routes = require("../server/routes");
+const loadModel = require("../services/loadModel");
+const InputError = require("../exceptions/InputError");
 
-app.use(cors());
-app.use(express.json());
+(async () => {
+  const server = Hapi.server({
+    port: 3000,
+    host: "0.0.0.0",
+    routes: {
+      cors: {
+        origin: ["*"],
+      },
+    },
+  });
 
-routes(app);
+  const model = await loadModel();
+  server.app.model = model;
 
-// Start the server
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
-});
+  server.route(routes);
+
+  server.ext("onPreResponse", function (request, h) {
+    const response = request.response;
+
+    if (response instanceof InputError) {
+      const newResponse = h.response({
+        status: "fail",
+        message: `${response.message} Silakan gunakan foto lain.`,
+      });
+      newResponse.code(response.statusCode);
+      return newResponse;
+    }
+
+    if (response.isBoom) {
+      const newResponse = h.response({
+        status: "fail",
+        message: response.message,
+      });
+      newResponse.code(response.statusCode);
+      return newResponse;
+    }
+
+    return h.continue;
+  });
+  await server.start();
+  console.log(`Server start at: ${server.info.uri}`);
+})();

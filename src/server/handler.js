@@ -1,44 +1,37 @@
-const crypto = require("crypto");
-const loadModel = require("../services/loadModel");
 const predictClassification = require("../services/inferenceService");
+const crypto = require("crypto");
 const storeData = require("../services/storeData");
 
-async function predict(req, res) {
-  const imageFile = req.file;
+async function postPredictHandler(request, h) {
+  const { image } = request.payload;
+  const { model } = request.server.app;
+
+  const { confidenceScore, label, explanation, suggestion } =
+    await predictClassification(model, image);
   const id = crypto.randomUUID();
-  let predictionResult; // Define predictionResult outside try-catch block
+  const createdAt = new Date().toISOString();
 
-  try {
-    const model = await loadModel();
-    const { confidenceScore } = await predictClassification(model, imageFile);
+  const data = {
+    id: id,
+    result: label,
+    explanation: explanation,
+    suggestion: suggestion,
+    confidenceScore: confidenceScore,
+    createdAt: createdAt,
+  };
 
-    predictionResult = {
-      id: id,
-      result: confidenceScore > 0.5 ? "Cancer" : "Non-Cancer",
-      suggestion:
-        confidenceScore > 0.5
-          ? "Segera periksa ke dokter!"
-          : "Tidak kena kanker",
-      createdAt: new Date().toISOString(),
-    };
+  await storeData(id, data);
 
-    await storeData(id, predictionResult);
-
-    res.status(200).json({
+  return h
+    .response({
       status: "success",
-      message: "Model is predicted successfully",
-      data: predictionResult,
-    });
-  } catch (error) {
-    console.error("Error predicting:", error);
-    res.status(400).json({
-      status: "fail",
-      message: "Terjadi kesalahan dalam melakukan prediksi",
-      data: predictionResult, // Use predictionResult even in error case
-    });
-  }
+      message:
+        confidenceScore > 99
+          ? "Model is predicted successfully."
+          : "Model is predicted successfully but under treshold. Please use the correct picture.",
+      data,
+    })
+    .code(201);
 }
 
-module.exports = {
-  predict,
-};
+module.exports = postPredictHandler;
