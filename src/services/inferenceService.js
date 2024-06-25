@@ -18,10 +18,15 @@ async function predictClassification(model, image) {
     console.log("score", score);
 
     const avg = Math.avg(...score);
+
+    console.log("Avg", avg);
+
     if (avg > 0.5) {
       result = "Cancer";
       suggestion = "Segera periksa ke dokter!";
     }
+
+    console.log(result, suggestion);
 
     return { result, suggestion };
   } catch (error) {
