@@ -15,6 +15,8 @@ async function predictClassification(model, image) {
     let result = "Non-cancer";
     let suggestion = "Anda baik-baik saja!";
 
+
+    console.log("pred", prediction);
     console.log("score", score);
 
     const avg = Math.avg(...score);
