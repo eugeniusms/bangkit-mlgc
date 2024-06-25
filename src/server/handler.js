@@ -1,7 +1,7 @@
 const crypto = require("crypto");
-const loadModel = require("./loadModel");
-const predictClassification = require("./inferenceService");
-const storeData = require("./storeData");
+const loadModel = require("../services/loadModel");
+const predictClassification = require("../services/inferenceService");
+const storeData = require("../services/storeData");
 
 async function predict(req, res) {
   const imageFile = req.file;
