@@ -6,10 +6,13 @@ const storeData = require("../services/storeData");
 async function predict(req, res) {
   const imageFile = req.file;
   const id = crypto.randomUUID();
-  const model = await loadModel();
+  let predictionResult; // Define predictionResult outside try-catch block
+
   try {
+    const model = await loadModel();
     const { confidenceScore } = await predictClassification(model, imageFile);
-    const predictionResult = {
+
+    predictionResult = {
       id: id,
       result: confidenceScore > 0.5 ? "Cancer" : "Non-Cancer",
       suggestion:
@@ -27,10 +30,11 @@ async function predict(req, res) {
       data: predictionResult,
     });
   } catch (error) {
+    console.error("Error predicting:", error);
     res.status(400).json({
       status: "fail",
       message: "Terjadi kesalahan dalam melakukan prediksi",
-      data: predictionResult,
+      data: predictionResult, // Use predictionResult even in error case
     });
   }
 }
