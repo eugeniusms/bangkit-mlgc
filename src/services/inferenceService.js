@@ -1,5 +1,5 @@
 const tf = require("@tensorflow/tfjs-node");
-const InputError = require("../exceptions/InputError");
+const InputError = require("../errors/InputError");
 
 async function predictClassification(model, image) {
   try {
@@ -9,33 +9,28 @@ async function predictClassification(model, image) {
       .expandDims()
       .toFloat();
 
+    const classes = ["Cancer", "Non-cancer"];
+
     const prediction = model.predict(tensor);
     const score = await prediction.data();
-    // const confidenceScore = Math.max(...score) * 100;
-    let result = "Non-cancer";
-    let suggestion = "Anda baik-baik saja!";
 
-    const classResult = tf.argMax(prediction, 1).dataSync()[0];
+    const confidenceScore = score[0] * 100;
+    const label = score[0] > 0.5 ? classes[0] : classes[1];
 
-    console.log("pred", prediction);
-    console.log("classResult", classResult);
-    console.log("label", label);
-    console.log("score", score);
+    let suggestion;
 
-    const avg = Math.avg(...score);
-
-    console.log("Avg", avg);
-
-    if (avg > 0.5) {
-      result = "Cancer";
+    if (label === "Cancer") {
       suggestion = "Segera periksa ke dokter!";
     }
 
-    console.log(result, suggestion);
+    if (label === "Non-cancer") {
+      suggestion = "Selamat anda masih sehat!";
+    }
 
-    return { result, suggestion };
+    return { confidenceScore, label, suggestion };
   } catch (error) {
-    throw new InputError(`Terjadi kesalahan input: ${error.message}`);
+    console.log(error);
+    throw new InputError();
   }
 }
 

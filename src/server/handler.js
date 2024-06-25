@@ -1,18 +1,21 @@
+const { storeData, getAllData } = require("../services/firestoreService");
 const predictClassification = require("../services/inferenceService");
 const crypto = require("crypto");
-const storeData = require("../services/storeData");
 
 async function postPredictHandler(request, h) {
   const { image } = request.payload;
   const { model } = request.server.app;
 
-  const { result, suggestion } = await predictClassification(model, image);
+  const { confidenceScore, label, suggestion } = await predictClassification(
+    model,
+    image
+  );
   const id = crypto.randomUUID();
   const createdAt = new Date().toISOString();
 
   const data = {
     id: id,
-    result: result,
+    result: label,
     suggestion: suggestion,
     createdAt: createdAt,
   };
@@ -31,4 +34,16 @@ async function postPredictHandler(request, h) {
     .code(201);
 }
 
-module.exports = postPredictHandler;
+async function getPredictHandler(request, h) {
+  const data = await getAllData();
+
+  const response = h.response({
+    status: "success",
+    data,
+  });
+
+  response.code(200);
+  return response;
+}
+
+module.exports = { postPredictHandler, getPredictHandler };
