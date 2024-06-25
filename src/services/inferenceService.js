@@ -15,8 +15,12 @@ async function predictClassification(model, image) {
     let result = "Non-cancer";
     let suggestion = "Anda baik-baik saja!";
 
+    const classResult = tf.argMax(prediction, 1).dataSync()[0];
+    const label = classes[classResult];
 
     console.log("pred", prediction);
+    console.log("classResult", classResult);
+    console.log("label", label);
     console.log("score", score);
 
     const avg = Math.avg(...score);
